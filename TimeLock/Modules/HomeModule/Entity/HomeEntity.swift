@@ -37,17 +37,18 @@ struct HomeEntity: Identifiable {
         TOTPGenerator.shared.generate(for: self.id)
     }
 
-    var timeRemaining: Int {
+    var timeRemaining: Double {
         let interval = 30.0
         let now = Date().timeIntervalSince1970
         let nextSlot = ceil(now / interval) * interval
-        return Int(nextSlot - now)
+        return nextSlot - now
     }
 
     init(source: String, secret: Data) {
         self.source = source
         self.secret = secret
         self.id = secret.deterministicUUID
+        Logger.shared.log("Creating HomeEntity via secret, id: \(self.id.uuidString), source: \(source)", level: .info)
         TOTPGenerator.shared.register(secret: self.secret, for: self.id)
         KeychainStorage.shared.save(data: secret, for: id.uuidString)
     }
@@ -56,6 +57,7 @@ struct HomeEntity: Identifiable {
         self.id = id
         self.source = source
         self.secret = secret
+        Logger.shared.log("Restoring HomeEntity via id: \(id.uuidString), source: \(source)", level: .info)
         TOTPGenerator.shared.register(secret: self.secret, for: self.id)
     }
 }
@@ -66,5 +68,11 @@ extension Data {
         return Data(hash.prefix(16)).withUnsafeBytes {
             UUID(uuid: $0.load(as: uuid_t.self))
         }
+    }
+}
+
+extension HomeEntity: Equatable {
+    static func == (lhs: HomeEntity, rhs: HomeEntity) -> Bool {
+        return lhs.id == rhs.id
     }
 }

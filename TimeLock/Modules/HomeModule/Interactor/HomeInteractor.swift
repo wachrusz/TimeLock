@@ -24,10 +24,15 @@ final class HomeInteractor: HomeInteractorInput {
 
     func addEntity(source: String, secret: Data) {
         let entity = HomeEntity(source: source, secret: secret)
+        if RealmManager.shared.entityExists(entity.id) {
+            Logger.shared.log("⚠️ Entity with id \(entity.id) already exists. Skipping save.", level: .info)
+            return
+        }
+
         RealmManager.shared.save(entity)
         
         let current = iCloudStorage.shared.loadEntitiesMetadata()
-        var newEntry: [String: String] = [
+        let newEntry: [String: String] = [
             "id": entity.id.uuidString,
             "source": entity.source
         ]

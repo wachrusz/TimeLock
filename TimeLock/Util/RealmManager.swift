@@ -22,6 +22,7 @@ final class RealmManager {
 
     func loadAll() -> [HomeEntity] {
         let objects = realm.objects(RealmHomeEntity.self)
+        Logger.shared.log("RealmManager loaded \(objects.count) entities", level: .debug)
         return objects.compactMap { $0.toHomeEntity() }
     }
 
@@ -29,5 +30,17 @@ final class RealmManager {
         try? realm.write {
             realm.deleteAll()
         }
+    }
+    
+    func deleteEntity(_ entity: HomeEntity) {
+        if let obj = realm.object(ofType: RealmHomeEntity.self, forPrimaryKey: entity.id.uuidString) {
+            try? realm.write {
+                realm.delete(obj)
+            }
+        }
+    }
+    
+    func entityExists(_ id: UUID) -> Bool {
+        return realm.object(ofType: RealmHomeEntity.self, forPrimaryKey: id.uuidString) != nil
     }
 }

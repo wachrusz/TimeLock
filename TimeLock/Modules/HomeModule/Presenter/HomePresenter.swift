@@ -9,12 +9,15 @@ import Foundation
 
 protocol HomeViewInput: AnyObject {
     func displayEntities(_ entities: [HomeEntity])
+    func removeEntity(_ entity: HomeEntity)
 }
 
 protocol HomeViewOutput {
     func loadEntities()
     func addEntity(source: String, secret: Data)
     func deleteAllEntities()
+    
+    func deleteEntity(_ entity: HomeEntity)
 }
 
 
@@ -48,6 +51,7 @@ final class HomePresenter: HomeViewOutput, HomeInteractorOutput {
     }
     
     func didFetchEntities(_ entities: [HomeEntity]) {
+        Logger.shared.log("Presenter received \(entities.count) entities", level: .debug)
         currentEntities = entities
         view?.displayEntities(entities)
     }
@@ -57,5 +61,13 @@ final class HomePresenter: HomeViewOutput, HomeInteractorOutput {
             guard let self = self else { return }
             self.view?.displayEntities(self.currentEntities)
         }
+    }
+    
+    func deleteEntity(_ entity: HomeEntity) {
+        TOTPGenerator.shared.removeSecret(for: entity.id)
+        RealmManager.shared.deleteEntity(entity)
+        KeychainStorage.shared.delete(for: entity.id.uuidString)
+        view?.removeEntity(entity)
+        currentEntities.removeAll { $0.id == entity.id }
     }
 }

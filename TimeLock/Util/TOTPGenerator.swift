@@ -15,24 +15,23 @@ final class TOTPGenerator {
     }
 
     private var secretsByID: [UUID: Data] = [:]
+    
+    func removeSecret(for id: UUID) {
+        Logger.shared.log("💀 Removing secret for id: \(id)", level: .info)
+        secretsByID.removeValue(forKey: id)
+    }
 
     func register(secret: Data, for id: UUID) {
+        Logger.shared.log("Registering secret for id: \(id.uuidString)", level: .debug)
         secretsByID[id] = secret
         KeychainStorage.shared.save(data: secret, for: id.uuidString)
-        
-        let hex = secret.map { String(format: "%02hhx", $0) }.joined()
-        let base64 = secret.base64EncodedString()
-        print("""
-        🔐 [TOTP] Registered Secret:
-        - UUID: \(id)
-        - HEX: \(hex)
-        - BASE64: \(base64)
-        - SIZE: \(secret.count) bytes
-        """)
     }
 
     func generate(for id: UUID, digits: Int = 6, interval: TimeInterval = 30) -> String {
-        guard let secret = secretsByID[id] else { return "------" }
+        guard let secret = secretsByID[id] else {
+                Logger.shared.log("❌ No secret found for id: \(id.uuidString)", level: .error)
+                return "------"
+            }
 
         let timestamp = Date().timeIntervalSince1970
         let counter = UInt64(floor(timestamp / interval))
@@ -52,10 +51,6 @@ final class TOTPGenerator {
         } & 0x7fffffff
 
         let otp = number % UInt32(pow(10, Float(digits)))
-        
-        print("🔍 Secret for UUID \(id):")
-        print("- HEX:", secret.map { String(format: "%02x", $0) }.joined())
-        print("- SIZE: \(secret.count) bytes")
         
         return String(format: "%0*u", digits, otp)
     }

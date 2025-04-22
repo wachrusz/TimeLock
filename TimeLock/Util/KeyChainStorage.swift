@@ -51,6 +51,8 @@ final class KeychainStorage {
         else {
             return []
         }
+        
+        Logger.shared.log("Keychain returned \(items.count) keys", level: .debug)
 
         return items.compactMap { $0[kSecAttrAccount as String] as? String }
     }
@@ -58,6 +60,15 @@ final class KeychainStorage {
     func clearAll() {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+    
+    func delete(for key: String) {
+        Logger.shared.log("Deleting from Keychain key: \(key)", level: .info)
+        let query: [String: Any] = [
+            kSecClass as String       : kSecClassGenericPassword,
+            kSecAttrAccount as String : key
         ]
         SecItemDelete(query as CFDictionary)
     }
