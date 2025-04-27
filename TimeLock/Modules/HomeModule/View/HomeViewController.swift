@@ -16,10 +16,10 @@ class HomeViewController: UIViewController {
     private let tableView = UITableView()
     private let navbar = CustomNavbar()
     private var dismissTapGesture: UITapGestureRecognizer?
+    private let settingsView = SettingsView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavbar()
         setupUI()
         presenter?.loadEntities()
 
@@ -30,6 +30,15 @@ class HomeViewController: UIViewController {
 
         startProgressSync()
     }
+    
+    #if DEBUG
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        Logger.shared.log("\(settingsView.frame)")
+        Logger.shared.log("\(tableView.frame)")
+        Logger.shared.log("\(navbar.frame)")
+    }
+    #endif
 
     private func startProgressSync() {
         displayLink = CADisplayLink(target: self, selector: #selector(updateProgress))
@@ -45,42 +54,52 @@ class HomeViewController: UIViewController {
         GlobalProgressIndicatorManager.shared.update(ratio: ratio)
     }
 
-    private func setupNavbar() {
-        navigationController?.setNavigationBarHidden(true, animated: false)
-        view.addSubview(navbar)
-        navbar.translatesAutoresizingMaskIntoConstraints = false
-
-        navbar.manualButton.addTarget(self, action: #selector(presentManualEntry), for: .touchUpInside)
-        navbar.qrButton.addTarget(self, action: #selector(presentQRScanner), for: .touchUpInside)
-
-        navbar.onSettingsToggle = { [weak self] isSettings in
-            self?.tableView.isHidden = isSettings
-        }
-        
-        NSLayoutConstraint.activate([
-            navbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            navbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            navbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            navbar.heightAnchor.constraint(equalToConstant: 80)
-        ])
-    }
-
     private func setupUI() {
         view.backgroundColor = UIColor(named: "hover")
+        
+        view.addSubview(tableView)
+        view.addSubview(settingsView)
+        view.addSubview(navbar)
+
+        tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(HomeCell.self, forCellReuseIdentifier: "cell")
         tableView.backgroundColor = UIColor(named: "bg")
-        tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.separatorStyle = .none
         tableView.rowHeight = UITableView.automaticDimension
-        view.addSubview(tableView)
+
+        settingsView.translatesAutoresizingMaskIntoConstraints = false
+        settingsView.backgroundColor = UIColor(named: "bg")
+        settingsView.isHidden = true
+
+        navbar.translatesAutoresizingMaskIntoConstraints = false
+        navigationController?.setNavigationBarHidden(true, animated: false)
+        navbar.manualButton.addTarget(self, action: #selector(presentManualEntry), for: .touchUpInside)
+        navbar.qrButton.addTarget(self, action: #selector(presentQRScanner), for: .touchUpInside)
+        navbar.onSettingsToggle = { [weak self] isSettings in
+            self?.tableView.isHidden = isSettings
+            self?.settingsView.isHidden = !isSettings
+        }
 
         NSLayoutConstraint.activate([
+            // Navbar
+            navbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            navbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            navbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            navbar.heightAnchor.constraint(equalToConstant: 80),
+
+            // TableView
             tableView.topAnchor.constraint(equalTo: navbar.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            // SettingsView
+            settingsView.topAnchor.constraint(equalTo: navbar.bottomAnchor),
+            settingsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            settingsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            settingsView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
         if #available(iOS 11.0, *) {

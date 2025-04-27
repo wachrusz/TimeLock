@@ -48,6 +48,8 @@ final class HomePresenter: HomeViewOutput, HomeInteractorOutput {
         interactor.addEntity(source: source, secret: secret)
         let entities = interactor.fetchEntities()
         didFetchEntities(entities)
+        
+        FirebaseAnalyticsManager.shared.logUserActionEvent(actionType: .addedCode)
     }
     
     func didFetchEntities(_ entities: [HomeEntity]) {
@@ -69,5 +71,7 @@ final class HomePresenter: HomeViewOutput, HomeInteractorOutput {
         KeychainStorage.shared.delete(for: entity.id.uuidString)
         view?.removeEntity(entity)
         currentEntities.removeAll { $0.id == entity.id }
+        
+        FirebaseAnalyticsManager.shared.logUserActionEvent(actionType: .deletedCode)
     }
 }
