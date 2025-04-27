@@ -16,6 +16,8 @@ final class CustomNavbar: UIView {
 
     var isExpanded: Bool { expanded }
     var isSettings: Bool { settings }
+    
+    var onSettingsToggle: ((Bool) -> Void)?
 
     // MARK: - Constraints
 
@@ -38,7 +40,7 @@ final class CustomNavbar: UIView {
 
     let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "TimeLock"
+        label.text = "Codes"
         label.font = UIFont.systemFont(ofSize: 48, weight: .semibold)
         label.textColor = UIColor(named: "text")
         label.adjustsFontSizeToFitWidth = true
@@ -151,9 +153,6 @@ final class CustomNavbar: UIView {
     @objc func toggleButtons() {
         expanded.toggle()
 
-        let targetFontSize: CGFloat = expanded ? 43 : 48
-        animateLabelScaling(label: titleLabel, targetFontSize: targetFontSize)
-
         UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: []) {
             self.addButton.alpha = self.expanded ? 0 : 1
             self.manualButton.alpha = self.expanded ? 1 : 0
@@ -181,7 +180,7 @@ final class CustomNavbar: UIView {
 
         UIView.animate(withDuration: 0.3) {
             self.titleLabel.textAlignment = self.settings ? .right : .left
-            self.titleLabel.text = self.settings ? "Settings" : "TimeLock"
+            self.titleLabel.text = self.settings ? "Settings" : "Codes"
 
             self.buttonStack.isHidden = self.settings
             self.exitSettingsButton.alpha = self.settings ? 1 : 0
@@ -189,10 +188,11 @@ final class CustomNavbar: UIView {
 
             self.layoutIfNeeded()
         }
+        
+        self.onSettingsToggle?(isSettings)
     }
 
     // MARK: - Helpers
-
     static func makeIconButton(named: String, hidden: Bool = false, color: String = "button") -> UIButton {
         let button = UIButton(type: .system)
         button.setImage(UIImage(named: named), for: .normal)
@@ -201,23 +201,6 @@ final class CustomNavbar: UIView {
         button.layer.cornerRadius = 12
         button.translatesAutoresizingMaskIntoConstraints = false
         button.isHidden = hidden
-        button.alpha = hidden ? 0 : 1
         return button
     }
-    
-    func animateLabelScaling(label: UILabel, targetFontSize: CGFloat) {
-        guard let currentFont = label.font else { return }
-
-        let currentSize = currentFont.pointSize
-        let scaleFactor = targetFontSize / currentSize
-
-        UIView.animate(withDuration: 0.3, animations: {
-            label.transform = CGAffineTransform(scaleX: scaleFactor, y: scaleFactor)
-        }, completion: { _ in
-            label.transform = .identity
-            label.font = currentFont.withSize(targetFontSize)
-        })
-    }
-
-
 }

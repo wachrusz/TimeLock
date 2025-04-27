@@ -53,6 +53,10 @@ class HomeViewController: UIViewController {
         navbar.manualButton.addTarget(self, action: #selector(presentManualEntry), for: .touchUpInside)
         navbar.qrButton.addTarget(self, action: #selector(presentQRScanner), for: .touchUpInside)
 
+        navbar.onSettingsToggle = { [weak self] isSettings in
+            self?.tableView.isHidden = isSettings
+        }
+        
         NSLayoutConstraint.activate([
             navbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             navbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -105,13 +109,34 @@ class HomeViewController: UIViewController {
         let nav = UINavigationController(rootViewController: addVC)
         present(nav, animated: true)
     }
-
+    
     @objc private func presentQRScanner() {
-        let alert = UIAlertController(title: "QR Scanner", message: "Тут будет сканер", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Ок", style: .cancel))
-        present(alert, animated: true)
-    }
+        let scannerVC = QRScannerViewController()
+        scannerVC.modalPresentationStyle = .fullScreen
+        scannerVC.onQRCodeScanned = { [weak self] name, secret in
+            guard let self else { return }
+            let hashID = SHA256.hash(data: secret)
+            let hex = hashID.prefix(16).map { String(format: "%02x", $0) }.joined()
+            let id = UUID(uuidString: hex) ?? UUID()
 
+            if self.entities.contains(where: { $0.id == id }) {
+                let alert = UIAlertController(title: "Уже добавлен", message: "Этот ключ уже существует.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Ок", style: .default))
+                self.present(alert, animated: true)
+                return
+            }
+            
+            self.presenter?.addEntity(source: name, secret: secret)
+        }
+        
+        scannerVC.onShowError = { [weak self] text in
+            guard let self else { return }
+            self.showError(text)
+            
+        }
+        present(scannerVC, animated: true)
+    }
+    
     @objc private func clearAll() {
         presenter?.deleteAllEntities()
     }
@@ -164,6 +189,18 @@ class HomeViewController: UIViewController {
                 popup.removeFromSuperview()
             }
         }
+    }
+    
+    private func showError(_ text: String) {
+        let alert = UIAlertController(
+            title: "Wow! An error...",
+            message: text,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+            self.dismiss(animated: true)
+        })
+        present(alert, animated: true)
     }
 }
 

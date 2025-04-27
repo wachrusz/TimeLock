@@ -43,11 +43,11 @@ final class HomeInteractor: HomeInteractorInput {
         let existing = RealmManager.shared.loadAll()
 
         guard existing.isEmpty else {
-            print("📦 Realm не пуст, восстановление из iCloud не требуется.")
+            Logger.shared.log("📦 Realm не пуст, восстановление из iCloud не требуется.")
             return existing
         }
 
-        print("💥 Realm пуст. Попытка восстановления из iCloud...")
+        Logger.shared.log("💥 Realm пуст. Попытка восстановления из iCloud...")
 
         let meta = iCloudStorage.shared.loadEntitiesMetadata()
 
@@ -57,7 +57,7 @@ final class HomeInteractor: HomeInteractorInput {
                   let source = dict["source"],
                   let secret = KeychainStorage.shared.load(for: idStr)
             else {
-                print("⚠️ Пропущен повреждённый элемент: \(dict)")
+                Logger.shared.log("⚠️ Пропущен повреждённый элемент: \(dict)")
                 return nil
             }
 
@@ -66,7 +66,7 @@ final class HomeInteractor: HomeInteractorInput {
             return entity
         }
 
-        print("✅ Восстановлено из iCloud: \(restored.count) объектов")
+        Logger.shared.log("✅ Восстановлено из iCloud: \(restored.count) объектов")
         return restored
     }
 

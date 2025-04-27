@@ -101,7 +101,6 @@ final class ManualEntryViewController: UIViewController {
             showError("Не удалось распознать формат ключа")
             return
         }
-        print("🧬 Secret Bytes: \(secret.map { String(format: "%02x", $0) }.joined())")
         
         if TOTPGenerator.shared.contains(secret: secret) {
             showError("Такой ключ уже добавлен")
@@ -109,7 +108,7 @@ final class ManualEntryViewController: UIViewController {
         }
 
         let canonicalHex = secret.map { String(format: "%02hhx", $0) }.joined()
-        print("🔑 Канонический HEX: \(canonicalHex)")
+        Logger.shared.log("🔑 Канонический HEX: \(canonicalHex)")
 
         dismiss(animated: true) {
             self.onAdd?(name, secret)
